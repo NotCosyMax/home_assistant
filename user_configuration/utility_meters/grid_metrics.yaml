@@ -1,0 +1,170 @@
+  # General Information about the Utility Meters in this file:
+  # ---------------------------------------------------------------------------------------------
+  # The prefix "UM: " for names ("um_" for unique ids) means "Utility Meter". Each entitiy in 
+  # this file assumes that the "grid_energy_metrics" templates is also used. 
+  #
+  # While the "prefix" creates somewhat messy initial names for the entities, it makes 
+  # it easy to filter on utility meters. This is extra helpful if you for example have a 
+  # long-term recorder setup, but only want to store away entities that you find meaningful 
+  # to store.
+  #
+  # The expectation is that unless explicitiy marked "UPDATE TO YOUR ENTITY" or "UPDATE", one 
+  # should not need to alter anything in the templates to get them to a working state.
+  # ----------------------------------------------------------------------------------------------
+
+  # ----------------------------------------------------------------------------------------------
+  # Utility Meters to track energy import (hourly, daily, weekly, monthly, yearly and total).
+  # These are similar to the statistics in the Energy Panel, but provides actual sensors with 
+  # values that can be processed and recorded by other parts of HA.
+  # ----------------------------------------------------------------------------------------------
+  hourly_energy_imported_energy:
+    name: "UM: Hourly Imported Energy"
+    unique_id: um_hourly_imported_energy
+    source: sensor.tsp_cumulative_grid_energy_import
+    cycle: hourly
+    delta_values: False
+  daily_energy_imported_energy:
+    name: "UM: Daily Imported Energy"
+    unique_id: um_daily_imported_energy
+    source: sensor.tsp_cumulative_grid_energy_import
+    cycle: daily
+    delta_values: False
+  weekly_energy_imported_energy:
+    name: "UM: Weekly Imported Energy"
+    unique_id: um_weekly_imported_energy
+    source: sensor.tsp_cumulative_grid_energy_import
+    cycle: weekly
+    delta_values: False
+  monthly_energy_imported_energy:
+    name: "UM: Monthly Imported Energy"
+    unique_id: um_monthly_imported_energy
+    source: sensor.tsp_cumulative_grid_energy_import
+    cycle: monthly
+    delta_values: False
+  yearly_energy_imported_energy:
+    name: "UM: Yearly Imported Energy"
+    unique_id: um_yearly_imported_energy
+    source: sensor.tsp_cumulative_grid_energy_import
+    cycle: yearly
+    delta_values: False
+  energy_battery_imported_energy:
+    name: "UM: Total Imported Energy"
+    unique_id: um_total_imported_energy
+    source: sensor.tsp_cumulative_grid_energy_import
+    delta_values: False
+  # ----------------------------------------------------------------------------------------------
+  # Utility Meters to track energy export (hourly, daily, weekly, monthly, yearly and total).
+  # These are similar to the statistics in the Energy Panel, but provides actual sensors with 
+  # values that can be processed and recorded by other parts of HA.
+  # ----------------------------------------------------------------------------------------------
+  hourly_energy_exported_energy:
+    name: "UM: Hourly Exported Energy"
+    unique_id: um_hourly_exported_energy
+    source: sensor.tsp_cumulative_grid_energy_export
+    cycle: hourly
+    delta_values: False
+  daily_energy_exported_energy:
+    name: "UM: Daily Exported Energy"
+    unique_id: um_daily_exported_energy
+    source: sensor.tsp_cumulative_grid_energy_export
+    cycle: daily
+    delta_values: False
+  weekly_energy_exported_energy:
+    name: "UM: Weekly Exported Energy"
+    unique_id: um_weekly_exported_energy
+    source: sensor.tsp_cumulative_grid_energy_export
+    cycle: weekly
+    delta_values: False
+  monthly_energy_exported_energy:
+    name: "UM: Monthly Exported Energy"
+    unique_id: um_monthly_exported_energy
+    source: sensor.tsp_cumulative_grid_energy_export
+    cycle: monthly
+    delta_values: False
+  yearly_energy_exported_energy:
+    name: "UM: Yearly Exported Energy"
+    unique_id: um_yearly_exported_energy
+    source: sensor.tsp_cumulative_grid_energy_export
+    cycle: yearly
+    delta_values: False
+  energy_battery_exported_energy:
+    name: "UM: Total Exported Energy"
+    unique_id: um_total_exported_energy
+    source: sensor.tsp_cumulative_grid_energy_export
+    delta_values: False
+  # ----------------------------------------------------------------------------------------------
+  # Utility Meters to track energy import cost (hourly, daily, weekly, monthly, yearly and total).
+  # ----------------------------------------------------------------------------------------------
+  hourly_energy_energy_import_cost:
+    name: "UM: Hourly Energy Import Cost"
+    unique_id: um_hourly_energy_import_cost
+    source: sensor.tsp_import_cost_delta
+    cycle: hourly
+    delta_values: True
+  daily_energy_energy_import_cost:
+    name: "UM: Daily Energy Import Cost"
+    unique_id: um_daily_energy_import_cost
+    source: sensor.tsp_import_cost_delta
+    cycle: daily
+    delta_values: True
+  weekly_energy_energy_import_cost:
+    name: "UM: Weekly Energy Import Cost"
+    unique_id: um_weekly_energy_import_cost
+    source: sensor.tsp_import_cost_delta
+    cycle: weekly
+    delta_values: True
+  monthly_energy_energy_import_cost:
+    name: "UM: Monthly Energy Import Cost"
+    unique_id: um_monthly_energy_import_cost
+    source: sensor.tsp_import_cost_delta
+    cycle: monthly
+    delta_values: True
+  yearly_energy_energy_import_cost:
+    name: "UM: Yearly Energy Import Cost"
+    unique_id: um_yearly_energy_import_cost
+    source: sensor.tsp_import_cost_delta
+    cycle: yearly
+    delta_values: True
+  energy_battery_energy_import_cost:
+    name: "UM: Total Energy Import Cost"
+    unique_id: um_total_energy_import_cost
+    source: sensor.tsp_import_cost_delta
+    delta_values: True
+  # ----------------------------------------------------------------------------------------------
+  # Utility Meters to track energy export profit (hourly, daily, weekly, monthly, yearly and total).
+  # ----------------------------------------------------------------------------------------------
+  hourly_energy_energy_export_profit:
+    name: "UM: Hourly Energy Export Profit"
+    unique_id: um_hourly_energy_export_profit
+    source: sensor.tsp_export_profit_delta
+    cycle: hourly
+    delta_values: True
+  daily_energy_energy_export_profit:
+    name: "UM: Daily Energy Export Profit"
+    unique_id: um_daily_energy_export_profit
+    source: sensor.tsp_export_profit_delta
+    cycle: daily
+    delta_values: True
+  weekly_energy_energy_export_profit:
+    name: "UM: Weekly Energy Export Profit"
+    unique_id: um_weekly_energy_export_profit
+    source: sensor.tsp_export_profit_delta
+    cycle: weekly
+    delta_values: True
+  monthly_energy_energy_export_profit:
+    name: "UM: Monthly Energy Export Profit"
+    unique_id: um_monthly_energy_export_profit
+    source: sensor.tsp_export_profit_delta
+    cycle: monthly
+    delta_values: True
+  yearly_energy_energy_export_profit:
+    name: "UM: Yearly Energy Export Profit"
+    unique_id: um_yearly_energy_export_profit
+    source: sensor.tsp_export_profit_delta
+    cycle: yearly
+    delta_values: True
+  energy_battery_energy_export_profit:
+    name: "UM: Total Energy Export Profit"
+    unique_id: um_total_energy_export_profit
+    source: sensor.tsp_export_profit_delta
+    delta_values: True

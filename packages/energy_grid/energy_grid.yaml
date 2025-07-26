@@ -1,0 +1,156 @@
+# General Information about the entities setup in this file:
+# ---------------------------------------------------------------------------------------------
+# The prefix "TS: " for names ("ts_" for unique ids) means "Template Sensor" and is used for 
+# entities that is intended for the user directly. In other words, they provide a state that
+# provide a "value" to the user without further processing and that one could imagine adding 
+# to a dashboard or similar.
+# 
+# The prefix "TSP: " for names ("ts_proxy" for unique ids) means "Template Sensor Proxy"
+# is used for entities that IS NOT inteded for the user directly. The purpose of these entites
+# are first and foremost meant to be used by other entities, such as Utility Meters and other
+# template sensors. 
+#
+# The prefix "UM: " for names ("um_" for unique ids) means "Utility Meter". 
+#
+# While this "prefix strategy" creates somewhat messy initial names for the entities, it makes 
+# it easy to filter between "meaningful" and "working state" entities. This is extra helpful 
+# if you for example have a long-term recorder setup, but only want to store away entities that
+# provide an actual meaningful state (for example, storing "proxy" entities are very likely a
+# waste of resources, and you want to easily be able to identify and exclude these).
+#
+# The expectation is that unless explicitiy marked "UPDATE TO YOUR ENTITY" or "UPDATE", one 
+# should not need to alter anything in the templates to get them to a working state.
+# ----------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------
+# Template sensors used to (easier) facilitate other entities specified in this file.
+# ----------------------------------------------------------------------------------------------
+template:
+  # The "Degree Minutes" value in the integration is an "input_number" sensor. While this is... fine, it makes for a horrible experience.
+  # Everytime the value is updated, it resets the slider/value everytime which means setting your own is hard. We do a proxy sensor for value only 
+  # and handle the "set value" using a custom button
+  - trigger:
+      - platform: state
+        entity_id: number.degree_minutes_16_bit_43005 # UPDATE TO YOUR ENTITY
+    sensor:
+      - name: "TS: Nibe F730 Degree Minutes"
+        unique_id: ts_nibe_f730_degree_minutes
+        state: >
+          {{ states('number.degree_minutes_16_bit_43005') | float(0) }}
+
+  # Duplicates the reported values from the heat pump. Done this way to allow easier filtering 
+  # for long time storage and/or option to change source in the future without messing up history.
+  - trigger:
+      - platform: state
+        entity_id: sensor.hp_consumed_energy_due_to_hot_water_41848 # UPDATE TO YOUR ENTITY
+    sensor:
+      - name: "TS: Nibe F730 Energy Consumed due to Hot Water"
+        unique_id: ts_nibe_f730_energy_consumed_due_to_hot_water
+        unit_of_measurement: 'kWh'
+        state_class: total_increasing
+        device_class: energy
+        state: >
+          {{ int(trigger.to_state.state, 0) }}
+  - trigger:
+      - platform: state
+        entity_id: sensor.hp_consumed_energy_due_to_ventilation_41846 # UPDATE TO YOUR ENTITY
+    sensor:
+      - name: "TS: Nibe F730 Energy Consumed due to Ventilation"
+        unique_id: ts_nibe_f730_energy_consumed_due_to_ventilation
+        unit_of_measurement: 'kWh'
+        state_class: total_increasing
+        device_class: energy
+        state: >
+          {{ int(trigger.to_state.state, 0) }}
+  - trigger:
+      - platform: state
+        entity_id: sensor.hp_consumed_energy_due_to_heating_41850 # UPDATE TO YOUR ENTITY
+    sensor:
+      - name: "TS: Nibe F730 Energy Consumed due to Heating"
+        unique_id: ts_nibe_f730_energy_consumed_due_to_heating
+        unit_of_measurement: 'kWh'
+        state_class: total_increasing
+        device_class: energy
+        state: >
+          {{ int(trigger.to_state.state, 0) }}
+
+# ----------------------------------------------------------------------------------------------
+# Utility Meters to track Hot Water, Heating and Ventilation energy consumption  
+# (daily, weekly, monthly, yearly and total). These are similar to the statistics in the
+# Energy Panel, but provides actual sensors with values that can be processed and recorded by 
+# other parts of HA.
+# ----------------------------------------------------------------------------------------------
+utility_meter:
+  daily_nibe_f730_energy_consumed_due_to_heating:
+    name: "UM: Nibe F730 Daily Energy Consumed due to Heating"
+    unique_id: um_nibe_f730_daily_energy_consumed_due_to_heating
+    source: sensor.ts_nibe_f730_energy_consumed_due_to_heating
+    cycle: daily
+    delta_values: False
+  weekly_nibe_f730_energy_consumed_due_to_heating:
+    name: "UM: Nibe F730 Weekly Energy Consumed due to Heating"
+    unique_id: um_nibe_f730_weekly_energy_consumed_due_to_heating
+    source: sensor.ts_nibe_f730_energy_consumed_due_to_heating
+    cycle: weekly
+    delta_values: False
+  monthly_nibe_f730_energy_consumed_due_to_heating:
+    name: "UM: Nibe F730 Monthly Energy Consumed due to Heating"
+    unique_id: um_nibe_f730_monthly_energy_consumed_due_to_heating
+    source: sensor.ts_nibe_f730_energy_consumed_due_to_heating
+    cycle: monthly
+    delta_values: False
+  yearly_nibe_f730_energy_consumed_due_to_heating:
+    name: "UM: Nibe F730 Yearly Energy Consumed due to Heating"
+    unique_id: um_nibe_f730_yearly_energy_consumed_due_to_heating
+    source: sensor.ts_nibe_f730_energy_consumed_due_to_heating
+    cycle: yearly
+    delta_values: False
+  daily_nibe_f730_energy_consumed_due_to_hot_water:
+    name: "UM: Nibe F730 Daily Energy Consumed due to Hot Water"
+    unique_id: um_nibe_f730_daily_energy_consumed_due_to_hot_water
+    source: sensor.ts_nibe_f730_energy_consumed_due_to_hot_water
+    cycle: daily
+    delta_values: False
+  weekly_nibe_f730_energy_consumed_due_to_hot_water:
+    name: "UM: Nibe F730 Weekly Energy Consumed due to Hot Water"
+    unique_id: um_nibe_f730_weekly_energy_consumed_due_to_hot_water
+    source: sensor.ts_nibe_f730_energy_consumed_due_to_hot_water
+    cycle: weekly
+    delta_values: False
+  monthly_nibe_f730_energy_consumed_due_to_hot_water:
+    name: "UM: Nibe F730 Monthly Energy Consumed due to Hot Water"
+    unique_id: um_nibe_f730_monthly_energy_consumed_due_to_hot_water
+    source: sensor.ts_nibe_f730_energy_consumed_due_to_hot_water
+    cycle: monthly
+    delta_values: False
+  yearly_nibe_f730_energy_consumed_due_to_hot_water:
+    name: "UM: Nibe F730 Yearly Energy Consumed due to Hot Water"
+    unique_id: um_nibe_f730_yearly_energy_consumed_due_to_hot_water
+    source: sensor.ts_nibe_f730_energy_consumed_due_to_hot_water
+    cycle: yearly
+    delta_values: False
+  daily_nibe_f730_energy_consumed_due_to_ventilation:
+    name: "UM: Nibe F730 Daily Energy Consumed due to Ventilation"
+    unique_id: um_nibe_f730_daily_energy_consumed_due_to_ventilation
+    source: sensor.ts_nibe_f730_energy_consumed_due_to_ventilation
+    cycle: daily
+    delta_values: False  
+  weekly_nibe_f730_energy_consumed_due_to_ventilation:
+    name: "UM: Nibe F730 Weekly Energy Consumed due to Ventilation"
+    unique_id: um_nibe_f730_weekly_energy_consumed_due_to_ventilation
+    source: sensor.ts_nibe_f730_energy_consumed_due_to_ventilation
+    cycle: weekly
+    delta_values: False  
+  monthly_nibe_f730_energy_consumed_due_to_ventilation:
+    name: "UM: Nibe F730 Monthly Energy Consumed due to Ventilation"
+    unique_id: um_nibe_f730_monthly_energy_consumed_due_to_ventilation
+    source: sensor.ts_nibe_f730_energy_consumed_due_to_ventilation
+    cycle: monthly
+    delta_values: False  
+  yearly_nibe_f730_energy_consumed_due_to_ventilation:
+    name: "UM: Nibe F730 Yearly Energy Consumed due to Ventilation"
+    unique_id: um_nibe_f730_yearly_energy_consumed_due_to_ventilation
+    source: sensor.ts_nibe_f730_energy_consumed_due_to_ventilation
+    cycle: yearly
+    delta_values: False  
+

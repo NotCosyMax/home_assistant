@@ -1,0 +1,83 @@
+  # General Information about the templates in this file:
+  # ---------------------------------------------------------------------------------------------
+  # The prefix "TS: " for names ("ts_" for unique ids) means "Template Sensor" and is used for 
+  # entities that is intended for the user directly. In other words, they provide a state that
+  # provide a "value" to the user without further processing and that one could imagine adding 
+  # to a dashboard or similar.
+  # 
+  # The prefix "TSP: " for names ("ts_proxy" for unique ids) means "Template Sensor Proxy"
+  # is used for entities that IS NOT inteded for the user directly. The purpose of these entites
+  # are first and foremost meant to be used by other entities, such as Utility Meters and other
+  # template sensors. 
+  #
+  # While this "prefix strategy" creates somewhat messy initial names for the entities, it makes 
+  # it easy to filter between "meaningful" and "working state" entities. This is extra helpful 
+  # if you for example have a long-term recorder setup, but only want to store away entities that
+  # provide an actual meaningful state (for example, storing "proxy" entities are very likely a
+  # waste of resources, and you want to easily be able to identify and exclude these).
+  #
+  # The expectation is that unless explicitiy marked "UPDATE TO YOUR ENTITY" or "UPDATE", one 
+  # should not need to alter anything in the templates to get them to a working state.
+  # ----------------------------------------------------------------------------------------------
+
+  # ==============================================================================================
+  #  Import / Export Cost Templates
+  #
+  #  These templates is meant to help keep track of actual import cost / export price.
+  #
+  #  Requirements/Expectations:
+  #  
+  #  The user need to update the nordpool /HACS version) entity to match your own. The oser also
+  #  need to provide meaningful numbers for "VAT", "Grid Transfer Cost" and "Extra Export Profit"
+  # ----------------------------------------------------------------------------------------------
+  # Current Import / Export cost entities with history+forecast attribute. Currently tailored for
+  # the Swedish energy market, and include for example VAT and Grid Utility costs on top of the
+  # raw energy price.
+  # ---------------------------------------------------------------------------------------------- 
+  - trigger:
+    - platform: state
+      # Uses the HACS version of "Nordpool", as this integration provides more detailed data
+      # as of now
+      entity_id: sensor.nordpool_kwh_se3_sek_3_10_0 # UPDATE TO YOUR ENTITY
+      attribute: current_price
+      variables:
+        new_price: "{{ trigger.to_state.attributes['current_price'] }}"
+        VAT: "1.25"
+        grid_transfer_cost_kwh: "0.83" # UPDATE
+        extra_export_earning_kwh: "0.05" # UPDATE
+    condition:
+      - condition: template
+        value_template: "{{ is_number(new_price) }}"
+    sensor:
+      # Import cost: Include VAT and "Grid Trasfer Cost / kWh"
+      - name: "TS: Current Energy Import Price"
+        unique_id: ts_current_energy_import_price
+        unit_of_measurement: 'SEK/kWh'
+        state: >
+          {{ (float(new_price) * float(VAT) ) + float(grid_transfer_cost_kwh) }}
+        attributes:
+          today_tomorrow_cost_forecast: >
+            [
+            {% for item in trigger.to_state.attributes['raw_today'] %}
+              {'datetime': '{{item['start']}}', 'cost':{{((item['value'] | round(2)) * float(VAT)) + float(grid_transfer_cost_kwh)}}},
+            {% endfor %}
+            {% for item in trigger.to_state.attributes['raw_tomorrow']  %}
+              {'datetime': '{{item['start']}}', 'cost':{{((item['value'] | round(2)) * float(VAT)) + float(grid_transfer_cost_kwh)}}},
+            {% endfor %}
+            ]
+      # Export Profit: Add potential extra earning for exported energy"
+      - name: "TS: Current Energy Export Profit"
+        unique_id: ts_current_energy_export_profit
+        unit_of_measurement: 'SEK/kWh'
+        state: >
+          {{ float(new_price) + float(extra_export_earning_kwh) }}
+        attributes:
+          today_tomorrow_profit_forecast: >
+            [
+            {% for item in trigger.to_state.attributes['raw_today'] %}
+              {'datetime': '{{item['start']}}', 'cost':{{((item['value'] | round(2)) * 1) + float(extra_export_earning_kwh)}}},
+            {% endfor %}
+            {% for item in trigger.to_state.attributes['raw_tomorrow']  %}
+              {'datetime': '{{item['start']}}', 'cost':{{((item['value'] | round(2)) * 1) + float(extra_export_earning_kwh)}}},
+            {% endfor %}
+            ]

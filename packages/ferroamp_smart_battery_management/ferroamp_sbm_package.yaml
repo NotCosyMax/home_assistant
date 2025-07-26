@@ -1,0 +1,13 @@
+input_number:
+  helper_ferroamp_smb_last_discharge:
+    name: "Helper: FerroAmp SMB Last Discharge"
+    initial: 0
+    min: -20000
+    max: 20000
+    step: 1
+
+input_boolean:
+  helper_ferroamp_smb_force_idle:
+    name: "Helper: FerroAmp SMB Force Idle"
+    inital: false
+    icon: mdi:battery

@@ -1,0 +1,135 @@
+  # General Information about the templates in this file:
+  # ---------------------------------------------------------------------------------------------
+  # The prefix "TS: " for names ("ts_" for unique ids) means "Template Sensor" is used for 
+  # entities that is intended for the user directly. In other words, they provide a state that
+  # provide a "value" to the user without further processing and that one could imagine adding 
+  # to a dashboard or similar.
+  # 
+  # The prefix "TSP: " for names ("ts_proxy" for unique ids) means "Template Sensor Proxy"
+  # is used for entities that IS NOT inteded for the user directly. The purpose of these entites
+  # are first and foremost meant to be used by other entities, such as Utility Meters and other
+  # template sensors. 
+  #
+  # While this "prefix strategy" creates somehwat messy initial names for the entities, it makes 
+  # it easy to filter between "meaningful" and "working state" entities. This is extra helpful 
+  # if you for example have a long-term recorder setup, but only want to store away entities that
+  # provide an actual meaningful state (for example, storing "proxy" entities are very likely a
+  # waste of resources, and you want to easily be able to identify and exclude these).
+  #
+  # The expectation is that unless explicitiy marked "UPDATE TO YOUR ENTITY" or "UPDATE", one 
+  # should not need to alter anything in the templates to get them to a working state.
+  # ----------------------------------------------------------------------------------------------
+
+  # ==============================================================================================
+  #  FerroAmp (HACS) Integration Helper Tempates
+  #
+  #  These templates is meant to help and/or simplify using the data provided by the FerroAmp
+  #  system together with the HACS integration. 
+  #
+  #  Requirements/Expectations:
+  #  
+  #  The user (might) need to update the trigger entities to match their FerroAmp integration.
+  # ----------------------------------------------------------------------------------------------
+  # The FerroAmp system does not provide seperate sensors for exported and imported power. 
+  # This is done to simplify using these as input for other integrations/templates/automations
+  # that expets sensors to follow the the typical Swedish (not limited to) Grid Energy Meters,
+  # using the P1 HAN interface communicate.
+  # The FerroAmp combined value is split into "Import" and "Export". The "negtive for export" 
+  # notion is removed.
+  # ---------------------------------------------------------------------------------------------- 
+  - trigger:
+      - platform: state
+        entity_id:
+            - sensor.ferroamp_grid_power # UPDATE TO YOUR ENTITY
+        variables:
+          new_power: "{{ trigger.to_state.state }}"
+    condition:
+      - condition: template
+        value_template: "{{ is_number(new_power) }}"
+    sensor:
+      - name: "TS: Grid Import Power"
+        unique_id: ts_grid_import_power
+        unit_of_measurement: 'kWh'
+        state: >
+          {% if new_power > 0 %}
+          {{ float(new_power, 0) / 1000.0 }}
+          {% else %}
+          {{ float(0) }}
+          {% endif %}
+      - name: "TS: Grid Export Power"
+        unique_id: ts_grid_export_power
+        unit_of_measurement: 'kWh'
+        state: >
+          {% if new_power < 0 %}
+          {{ (0 - (float(new_power, 0) / 1000.0)) }}
+          {% else %}
+          {{ float(0) }}
+          {% endif %}
+  # ----------------------------------------------------------------------------------------------
+  # The FerroAmp sensors have a bad habit of resetting down to "0" for a short while during a 
+  # reboot of the system. When the actual value is restored, it messes with the Energy dashboard,
+  # as it assumes values are strictly increasing (causing major jumps in the statistics for that day).
+  # To counter this, proxy entities is created which is reflecting the FerroAmp sensor value, but 
+  # is strictly increasing.
+  # ---------------------------------------------------------------------------------------------- 
+  # Solar
+  - trigger:
+      - platform: state
+        entity_id:
+          - sensor.ferroamp_total_solar_energy # UPDATE TO YOUR ENTITY
+        variables:
+          new_energy: "{{ trigger.to_state.state }}"
+    condition:
+      - condition: template
+        value_template: "{{ is_number(new_energy) }}"
+    sensor:
+      - name: "TS: Total Solar Energy"
+        unique_id: ts_total_solar_energy_filtered
+        unit_of_measurement: 'kWh'
+        state_class: total_increasing
+        device_class: energy
+        state: >
+          {{ max(float(this.state, 0.0), float(new_energy,0.0)) }}
+        attributes:
+          last_value: "{{ this.state }}"
+  # Battery
+  - trigger:
+      - platform: state
+        entity_id:
+          - sensor.ferroamp_battery_energy_consumed
+        variables:
+          new_energy: "{{ trigger.to_state.state }}"
+    condition:
+      - condition: template
+        value_template: "{{ is_number(new_energy) }}"
+    sensor:
+      - name: "TS: Total Battery Energy Consumed"
+        unique_id: ts_total_battery_consumed_filtered
+        unit_of_measurement: 'kWh'
+        state_class: total_increasing
+        device_class: energy
+        state: >
+          {{ max(float(this.state, 0.0), float(new_energy,0.0)) }}
+        attributes:
+          last_value: "{{ this.state }}"
+  - trigger:
+      - platform: state
+        entity_id:
+          - sensor.ferroamp_battery_energy_produced
+        variables:
+          new_energy: "{{ trigger.to_state.state }}"
+    condition:
+      - condition: template
+        value_template: "{{ is_number(new_energy) }}"
+    sensor:
+      - name: "TS: Total Battery Energy Produced"
+        unique_id: ts_total_battery_produced_filtered
+        unit_of_measurement: 'kWh'
+        state_class: total_increasing
+        device_class: energy
+        state: >
+          {{ max(float(this.state, 0.0), float(new_energy,0.0)) }}
+        attributes:
+          last_value: "{{ this.state }}"
+  # ==============================================================================================
+  

@@ -1,0 +1,170 @@
+  # General Information about the Utility Meters in this file:
+  # ---------------------------------------------------------------------------------------------
+  # The prefix "UM: " for names ("um_" for unique ids) means "Utility Meter". Each entitiy in 
+  # this file assumes that the "battery_energy_metrics" templates is also used. 
+  #
+  # While the "prefix" creates somewhat messy initial names for the entities, it makes 
+  # it easy to filter on utility meters. This is extra helpful if you for example have a 
+  # long-term recorder setup, but only want to store away entities that you find meaningful 
+  # to store.
+  #
+  # The expectation is that unless explicitiy marked "UPDATE TO YOUR ENTITY" or "UPDATE", one 
+  # should not need to alter anything in the templates to get them to a working state.
+  # ----------------------------------------------------------------------------------------------
+
+  # ----------------------------------------------------------------------------------------------
+  # Utility Meters to track cost of charging the battery (hourly, daily, weekly, monthly, yearly
+  # and total).
+  # ----------------------------------------------------------------------------------------------
+  hourly_energy_battery_charge_cost:
+    name: "UM: Hourly Battery Charge Cost"
+    unique_id: um_hourly_battery_charge_cost
+    source: sensor.tsp_battery_cost_delta
+    cycle: hourly
+    delta_values: True
+  daily_energy_battery_charge_cost:
+    name: "UM: Daily Battery Charge Cost"
+    unique_id: um_daily_battery_charge_cost
+    source: sensor.tsp_battery_cost_delta
+    cycle: daily
+    delta_values: True
+  weekly_energy_battery_charge_cost:
+    name: "UM: Weekly Battery Charge Cost"
+    unique_id: um_weekly_battery_charge_cost
+    source: sensor.tsp_battery_cost_delta
+    cycle: weekly
+    delta_values: True
+  monthly_energy_battery_charge_cost:
+    name: "UM: Monthly Battery Charge Cost"
+    unique_id: um_monthly_battery_charge_cost
+    source: sensor.tsp_battery_cost_delta
+    cycle: monthly
+    delta_values: True
+  yearly_energy_battery_charge_cost:
+    name: "UM: Yearly Battery Charge Cost"
+    unique_id: um_yearly_battery_charge_cost
+    source: sensor.tsp_battery_cost_delta
+    cycle: yearly
+    delta_values: True
+  energy_battery_charge_cost:
+    name: "UM: Total Battery Charge Cost"
+    unique_id: um_total_battery_charge_cost
+    source: sensor.tsp_battery_cost_delta
+    delta_values: True
+  # ----------------------------------------------------------------------------------------------
+  # Utility Meters to track total "profit" from using the battery (hourly, daily, weekly, monthly, 
+  # yearly and total).
+  # ----------------------------------------------------------------------------------------------
+  hourly_energy_battery_discharge_profit:
+    name: "UM: Hourly Battery Discharge Profit"
+    unique_id: um_hourly_battery_discharge_profit
+    source: sensor.tsp_battery_profit_delta
+    cycle: hourly
+    delta_values: True
+  daily_energy_battery_discharge_profit:
+    name: "UM: Daily Battery Discharge Profit"
+    unique_id: um_daily_battery_discharge_profit
+    source: sensor.tsp_battery_profit_delta
+    cycle: daily
+    delta_values: True
+  weekly_energy_battery_discharge_profit:
+    name: "UM: Weekly Battery Discharge Profit"
+    unique_id: um_weekly_battery_discharge_profit
+    source: sensor.tsp_battery_profit_delta
+    cycle: weekly
+    delta_values: True
+  monthly_energy_battery_discharge_profit:
+    name: "UM: Monthly Battery Discharge Profit"
+    unique_id: um_monthly_battery_discharge_profit
+    source: sensor.tsp_battery_profit_delta
+    cycle: monthly
+    delta_values: True
+  yearly_energy_battery_discharge_profit:
+    name: "UM: Yearly Battery Discharge Profit"
+    unique_id: um_yearly_battery_discharge_profit
+    source: sensor.tsp_battery_profit_delta
+    cycle: yearly
+    delta_values: True
+  energy_battery_discharge_profit:
+    name: "UM: Total Battery Discharge Profit"
+    unique_id: um_total_battery_discharge_profit
+    source: sensor.tsp_battery_profit_delta
+    delta_values: True
+  # ----------------------------------------------------------------------------------------------
+  # Utility Meters to track the "self-consumption profit" from using the battery (hourly, daily, 
+  # weekly, monthly, yearly and total).
+  # ----------------------------------------------------------------------------------------------
+  hourly_energy_battery_self_consumed_discharge_profit:
+    name: "UM: Hourly Battery Self-Consumed Discharge Profit"
+    unique_id: um_hourly_battery_self_consumed_discharge_profit
+    source: sensor.tsp_battery_self_consumed_profit_delta
+    cycle: hourly
+    delta_values: True
+  daily_energy_battery_self_consumed_discharge_profit:
+    name: "UM: Daily Battery Self-Consumed Discharge Profit"
+    unique_id: um_daily_battery_self_consumed_discharge_profit
+    source: sensor.tsp_battery_self_consumed_profit_delta
+    cycle: daily
+    delta_values: True
+  weekly_energy_battery_self_consumed_discharge_profit:
+    name: "UM: Weekly Battery Self-Consumed Discharge Profit"
+    unique_id: um_weekly_battery_self_consumed_discharge_profit
+    source: sensor.tsp_battery_self_consumed_profit_delta
+    cycle: weekly
+    delta_values: True
+  monthly_energy_battery_self_consumed_discharge_profit:
+    name: "UM: Monthly Battery Self-Consumed Discharge Profit"
+    unique_id: um_monthly_battery_self_consumed_discharge_profit
+    source: sensor.tsp_battery_self_consumed_profit_delta
+    cycle: monthly
+    delta_values: True
+  yearly_energy_battery_self_consumed_discharge_profit:
+    name: "UM: Yearly Battery Self-Consumed Discharge Profit"
+    unique_id: um_yearly_battery_self_consumed_discharge_profit
+    source: sensor.tsp_battery_self_consumed_profit_delta
+    cycle: yearly
+    delta_values: True
+  energy_battery_self_consumed_discharge_profit:
+    name: "UM: Total Battery Self-Consumed Discharge Profit"
+    unique_id: um_total_battery_self_consumed_discharge_profit
+    source: sensor.tsp_battery_self_consumed_profit_delta
+    delta_values: True
+  # ----------------------------------------------------------------------------------------------
+  # Utility Meters to track the "export profit" from using the battery (hourly, daily,  weekly, 
+  # monthly, yearly and total).
+  # ----------------------------------------------------------------------------------------------
+  hourly_energy_battery_exported_discharge_profit:
+    name: "UM: Hourly Battery Exported Discharge Profit"
+    unique_id: um_hourly_battery_exported_discharge_profit
+    source: sensor.tsp_battery_exported_profit_delta
+    cycle: hourly
+    delta_values: True
+  daily_energy_battery_exported_discharge_profit:
+    name: "UM: Daily Battery Exported Discharge Profit"
+    unique_id: um_daily_battery_exported_discharge_profit
+    source: sensor.tsp_battery_exported_profit_delta
+    cycle: daily
+    delta_values: True
+  weekly_energy_battery_exported_discharge_profit:
+    name: "UM: Weekly Battery Exported Discharge Profit"
+    unique_id: um_weekly_battery_exported_discharge_profit
+    source: sensor.tsp_battery_exported_profit_delta
+    cycle: weekly
+    delta_values: True
+  monthly_energy_battery_exported_discharge_profit:
+    name: "UM: Monthly Battery Exported Discharge Profit"
+    unique_id: um_monthly_battery_exported_discharge_profit
+    source: sensor.tsp_battery_exported_profit_delta
+    cycle: monthly
+    delta_values: True
+  yearly_energy_battery_exported_discharge_profit:
+    name: "UM: Yearly Battery Exported Discharge Profit"
+    unique_id: um_yearly_battery_exported_discharge_profit
+    source: sensor.tsp_battery_exported_profit_delta
+    cycle: yearly
+    delta_values: True
+  energy_battery_exported_discharge_profit:
+    name: "UM: Total Battery Exported Discharge Profit"
+    unique_id: um_total_battery_exported_discharge_profit
+    source: sensor.tsp_battery_exported_profit_delta
+    delta_values: True

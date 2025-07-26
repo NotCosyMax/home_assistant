@@ -1,0 +1,43 @@
+  # General Information about the Utility Meters in this file:
+  # ---------------------------------------------------------------------------------------------
+  # The prefix "UM: " for names ("um_" for unique ids) means "Utility Meter". 
+  #
+  # While the "prefix" creates somewhat messy initial names for the entities, it makes 
+  # it easy to filter on utility meters. This is extra helpful if you for example have a 
+  # long-term recorder setup, but only want to store away entities that you find meaningful 
+  # to store.
+  #
+  # The expectation is that unless explicitiy marked "UPDATE TO YOUR ENTITY" or "UPDATE", one 
+  # should not need to alter anything in the templates to get them to a working state.
+  # ----------------------------------------------------------------------------------------------
+
+  # ----------------------------------------------------------------------------------------------
+  # Utility Meters to track energy consumption of heating system (daily, weekly, monthly, yearly and total).
+  # These are similar to the statistics in the Energy Panel, but provides actual sensors with 
+  # values that can be processed and recorded by other parts of HA.
+  # ----------------------------------------------------------------------------------------------
+  # Outdoor Heat Pump (Via ESPHome RS-485)
+  daily_toshiba_haori_heat_pump_energy_consumed:
+    name: "UM: Daily Toshiba Haori Energy Consumed"
+    unique_id: um_daily_toshiba_haori_energy_consumed
+    source: sensor.p1valkyria_outdoor_heatpump_total_energy
+    cycle: daily
+    delta_values: False
+  weekly_toshiba_haori_heat_pump_energy_consumed:
+    name: "UM: Weekly Toshiba Haori Energy Consumed"
+    unique_id: um_weekly_toshiba_haori_energy_consumed
+    source: sensor.p1valkyria_outdoor_heatpump_total_energy
+    cycle: weekly
+    delta_values: False
+  monthly_toshiba_haori_heat_pump_energy_consumed:
+    name: "UM: Monthly Toshiba Haori Energy Consumed"
+    unique_id: um_monthly_toshiba_haori_energy_consumed
+    source: sensor.p1valkyria_outdoor_heatpump_total_energy
+    cycle: monthly
+    delta_values: False
+  yearly_toshiba_haori_heat_pump_energy_consumed:
+    name: "UM: Yearly Toshiba Haori Energy Consumed"
+    unique_id: um_yearly_toshiba_haori_energy_consumed
+    source: sensor.p1valkyria_outdoor_heatpump_total_energy
+    cycle: yearly
+    delta_values: False

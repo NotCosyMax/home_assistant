@@ -1,0 +1,146 @@
+  # General Information about the templates in this file:
+  # ---------------------------------------------------------------------------------------------
+  # The prefix "TS: " for names ("ts_" for unique ids) means "Template Sensor" and is used for 
+  # entities that is intended for the user directly. In other words, they provide a state that
+  # provide a "value" to the user without further processing and that one could imagine adding 
+  # to a dashboard or similar.
+  # 
+  # The prefix "TSP: " for names ("ts_proxy" for unique ids) means "Template Sensor Proxy"
+  # is used for entities that IS NOT inteded for the user directly. The purpose of these entites
+  # are first and foremost meant to be used by other entities, such as Utility Meters and other
+  # template sensors. 
+  #
+  # While this "prefix strategy" creates somewhat messy initial names for the entities, it makes 
+  # it easy to filter between "meaningful" and "working state" entities. This is extra helpful 
+  # if you for example have a long-term recorder setup, but only want to store away entities that
+  # provide an actual meaningful state (for example, storing "proxy" entities are very likely a
+  # waste of resources, and you want to easily be able to identify and exclude these).
+  #
+  # The expectation is that unless explicitiy marked "UPDATE TO YOUR ENTITY" or "UPDATE", one 
+  # should not need to alter anything in the templates to get them to a working state.
+  # ----------------------------------------------------------------------------------------------
+
+  # ==============================================================================================
+  #  Cumulative Import / Export Energy Templates
+  #
+  #  Requirements/Expectations:
+  #
+  #  All entities marked "UPDATE TO YOUR ENTITY" is changed to an existing one.
+  # ----------------------------------------------------------------------------------------------
+  # Cumulative Import / Export energy entities. These are likely duplicates of
+  # existing sensors, which is why they are considered as "proxy" entitites. The reason for this
+  # duplication is because their state is used in many other sibling tempaltes, in this and other 
+  # files. As the name of the entities below is likely to be unique, the effort of maintaining other
+  # templates depending on these states hopefully are lowered.
+  #
+  # The sensors assumes the cumulative value to be strictly increasing, and will only increase if 
+  # the new value is larger then the last.
+  # ---------------------------------------------------------------------------------------------- 
+  - trigger:
+      - platform: state
+        # Entity state should be "cumulative export energy" expressed in "kWh"
+        entity_id: sensor.ferroamp_external_energy_produced # UPDATE TO YOUR ENTITY
+        variables:
+          cumulative_energy: "{{ trigger.to_state.state }}"
+    condition:
+      - condition: template
+        value_template: "{{ is_number(cumulative_energy) }}"
+    sensor:
+      - name: "TSP: Cumulative Grid Energy Export"
+        unique_id: ts_proxy_cumulative_grid_energy_export
+        unit_of_measurement: 'kWh'
+        state_class: total_increasing
+        device_class: energy
+        state: >
+          {{ max(float(this.state, 0.0), float(cumulative_energy,0.0)) }}
+        attributes:
+          dbg_last_value: "{{ this.state }}"
+  - trigger:
+      - platform: state
+        # Entity state should be "cumulative import energy" expressed in "kWh"
+        entity_id:
+          - sensor.ferroamp_external_energy_consumed  # UPDATE TO YOUR ENTITY
+        variables:
+          cumulative_energy: "{{ trigger.to_state.state }}"
+    condition:
+      - condition: template
+        value_template: "{{ is_number(cumulative_energy) }}"
+    sensor:
+      - name: "TSP: Cumulative Grid Energy Import"
+        unique_id: ts_proxy_cumulative_grid_energy_import
+        unit_of_measurement: 'kWh'
+        state_class: total_increasing
+        device_class: energy
+        state: >
+          {{ max(float(this.state, 0.0), float(cumulative_energy,0.0)) }}
+        attributes:
+          dbg_last_value: "{{ this.state }}"
+  # ==============================================================================================
+
+  # ==============================================================================================
+  #  Import / Export cost and energy templates
+  #
+  #  These templates is meant to help keep track of actual actual cost/profit of import/export.
+  #
+  #  Requirements/Expectations:
+  #  
+  #  Expect the "ts_current_energy_import_price" and ts_current_energy_export_profit sensors
+  #  exists. These are provided by the integration/hacs_nordpool.yaml templates, but one can
+  #  choose to provide their own source by chaning out the entities below. The state of entities
+  #  should have the unit "Currency / kWh", for example "SEK / kWh".
+  # ----------------------------------------------------------------------------------------------
+  # "Import Cost Delta" entitiy. This is a "proxy" meant to be used by (for example) Utility Meters
+  # to track import cost over time. This combination somewhat mimics the "Energy Panel" in HA, but
+  # provides a history log which is easier to compare (and plot).
+  # ---------------------------------------------------------------------------------------------- 
+  - trigger:
+      - platform: state
+        # Entity state should be "cumulative import energy" expressed in "kWh"
+        entity_id: sensor.tsp_cumulative_grid_energy_import # UPDATE TO YOUR ENTITY
+        # Exclude any "non-number" state
+        not_from:
+          - "unknown"
+          - "unavailable"
+        not_to:
+          - "unknown"
+          - "unavailable"
+        variables:
+          import_delta: "{{ float(trigger.to_state.state, 0.0) - float(trigger.from_state.state, 0.0)  }}"
+          current_import_price: "{{ states('sensor.ts_current_energy_import_price') }}"
+    condition:
+      - condition: template
+        value_template: "{{ is_number(import_delta) and is_number(current_import_price) }}"
+    sensor:
+      - name: "TSP: Import Cost Delta"
+        unique_id: ts_proxy_import_cost_delta
+        unit_of_measurement: 'SEK'
+        state: "{{ float(import_delta) * float(current_import_price, 0.0) }}"
+
+  # ----------------------------------------------------------------------------------------------
+  # "Export Profit Delta" entitiy. This is a "proxy" meant to be used by (for example) 
+  # Utility Meters to track export profit over time. This combination somewhat mimics the 
+  # "Energy Panel" in HA, but provides a history log which is easier to compare (and plot).
+  # ---------------------------------------------------------------------------------------------- 
+  - trigger:
+      - platform: state
+        # Entity state should be "cumulative export energy" expressed in "kWh"
+        entity_id: sensor.tsp_cumulative_grid_energy_export # UPDATE TO YOUR ENTITY
+        # Exclude any "non-number" state
+        not_from:
+          - "unknown"
+          - "unavailable"
+        not_to:
+          - "unknown"
+          - "unavailable"
+        variables:
+          export_delta: "{{ float(trigger.to_state.state, 0.0) - float(trigger.from_state.state, 0.0)  }}"
+          current_export_profit: "{{ states('sensor.ts_current_energy_export_profit') }}"
+    condition:
+      - condition: template
+        value_template: "{{ is_number(export_delta) and is_number(current_export_profit) }}"
+    sensor:
+      - name: "TSP: Export Profit Delta"
+        unique_id: ts_proxy_export_profit_delta
+        unit_of_measurement: 'SEK'
+        state: "{{ float(export_delta) * float(current_export_profit, 0.0) }}"
+  # ==============================================================================================

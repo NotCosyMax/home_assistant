@@ -1,0 +1,246 @@
+  # General Information about the templates in this file:
+  # ---------------------------------------------------------------------------------------------
+  # The prefix "TS: " for names ("ts_" for unique ids) means "Template Sensor" and is used for 
+  # entities that is intended for the user directly. In other words, they provide a state that
+  # provide a "value" to the user without further processing and that one could imagine adding 
+  # to a dashboard or similar.
+  # 
+  # The prefix "TSP: " for names ("ts_proxy" for unique ids) means "Template Sensor Proxy"
+  # is used for entities that IS NOT inteded for the user directly. The purpose of these entites
+  # are first and foremost meant to be used by other entities, such as Utility Meters and other
+  # template sensors. 
+  #
+  # While this "prefix strategy" creates somewhat messy initial names for the entities, it makes 
+  # it easy to filter between "meaningful" and "working state" entities. This is extra helpful 
+  # if you for example have a long-term recorder setup, but only want to store away entities that
+  # provide an actual meaningful state (for example, storing "proxy" entities are very likely a
+  # waste of resources, and you want to easily be able to identify and exclude these).
+  #
+  # The expectation is that unless explicitiy marked "UPDATE TO YOUR ENTITY" or "UPDATE", one 
+  # should not need to alter anything in the templates to get them to a working state.
+  # ----------------------------------------------------------------------------------------------
+
+  # ==============================================================================================
+  #  Battery related templates
+  #
+  #  These templates is meant to help keep track of battery profitabilty. It only provide
+  #  "proxy" entities meant to be used with Utility Meters to track cost of energy that 
+  #  is "put into" the battery, and profit/savings of energy "taken out" of the battery.
+  #
+  #  In an effor to try minimize errors due to a mix of data sources (as entities state 
+  #  updates are assumed to be asynchronous), the template is updated on a 10min basis
+  #  instead of state of any involved entity.
+  #
+  #  Requirements/Expectations:
+  #  
+  #  All entities marked "UPDATE TO YOUR ENTITY" is changed to an existing one.
+  # 
+  #  Expects the "grid_energy_metrics" and "hacs_nordpool" templates to be present/used. 
+  #  If not, the "current import price" and "current export profit" entities need to be changed,
+  #  their unit should be "Currency / kWh". The entities "tsp_cumulative_grid_energy_import" and 
+  #  "tsp_cumulative_grid_energy_export" might also need updates in this case, and the state should 
+  #  have the unit "kWh".
+  # ----------------------------------------------------------------------------------------------
+  # "Cost Delta" entity for battery energy produced (energy put into the battery). This is a
+  # "proxy" sensor that assumes that any energy imported that is less or equal to the energy
+  # put into the battery, has gone into the battery. This means that it treat other sources, such 
+  # as solar power, as "free energy" and does not accumlate a cost for the portion of energy that
+  # is not stricly imported.
+  # ----------------------------------------------------------------------------------------------
+  # Due to a (strange?) behavior where trigger variables not renderinng in case there is more 
+  # then one possible trigger source (?), the time trigger is proxied.
+  - trigger:
+    - trigger: time_pattern
+      minutes: "/10"
+    - trigger: time_pattern
+      minutes: "59"
+    sensor:
+      - name: "TSP: Time Pattern Trigger 10 min"
+        unique_id: "ts_proxy_time_pattern_trigger_10_min"
+        state: >
+          {% if is_number(states('sensor.tsp_time_pattern_trigger_10_min')) %}
+            {% if int(states('sensor.tsp_time_pattern_trigger_10_min')) == 2  %}
+              {{ 1 }}
+            {% else %}
+              {{ 2 }}
+            {% endif %}
+          {% else %}
+            {{ 3 }}
+          {% endif %}
+  - trigger:
+    - platform: state
+      entity_id: sensor.tsp_time_pattern_trigger_10_min
+      # Exclude any "non-number" state
+      not_from:
+        - "unknown"
+        - "unavailable"
+      not_to:
+        - "unknown"
+        - "unavailable"
+      variables:
+        # The resulting sensor entity_id (update if needed)
+        _entity_this: "sensor.tsp_battery_cost_delta"
+        # "Battery Energy Stored", current and Last so that a delta can be calculated.
+        # In case "last" is not a number (does currently not exists), default it to "0".
+        # The entity state should be "cumulative energy" with the unit "kWh".
+        _entity_battery_energy_stored: "sensor.ts_total_battery_energy_produced" # UPDATE TO YOUR ENTITY
+        total_battery_energy_stored: "{{ states(_entity_battery_energy_stored) }}" 
+        last_total_battery_energy_stored: >
+          {% set attr = state_attr(_entity_this, 'last_total_battery_energy_stored') %}
+          {% if attr == None %}
+            {{ total_battery_energy_stored }}
+          {% else %}
+            {{ attr }}
+          {% endif %}
+        # "Grid Energy Import", current and Last so that a delta can be calculated.
+        # In case "last" is not a number (does currently not exists), default it to "0"
+        total_grid_energy_import: "{{ states('sensor.tsp_cumulative_grid_energy_import') }}"   
+        last_total_grid_energy_import: >
+          {% set attr = state_attr(_entity_this, 'last_total_grid_energy_import') %}
+          {% if attr == None %}
+            {{ total_grid_energy_import }}
+          {% else %}
+            {{ attr }}
+          {% endif %}
+        # Price of imported energy   
+        current_import_cost: "{{ states('sensor.ts_current_energy_import_price') }}" 
+        # Calculate usage deltas
+        battery_delta: >
+          {% if is_number(total_battery_energy_stored) %}
+          {{ float(total_battery_energy_stored) - float(last_total_battery_energy_stored) }}
+          {% else %}
+          {{ 0 }}
+          {% endif %}
+        grid_delta: >
+          {% if is_number(total_grid_energy_import) %}
+          {{ float(total_grid_energy_import) - float(last_total_grid_energy_import) }}
+          {% else %}
+          {{ 0 }}
+          {% endif %}
+    # Do not proceed to update the sensor unless the entities required actually has a meaningful state.
+    # The float default values above is simply to avoid exceptions and errors in the HA logs.     
+    condition:
+      - condition: template
+        value_template: "{{ is_number(states(_entity_battery_energy_stored)) and is_number(total_grid_energy_import) and is_number(current_import_cost) }}"
+    sensor:
+      - name: "TSP: Battery Cost Delta"
+        unique_id: ts_proxy_battery_cost_delta
+        unit_of_measurement: 'SEK'
+        state: "{{ min(float(battery_delta), float(grid_delta)) * float(current_import_cost) }}"
+        attributes:
+          # Used to store internal states
+          last_total_battery_energy_stored: "{{ total_battery_energy_stored }}"
+          last_total_grid_energy_import: "{{ total_grid_energy_import }}"
+
+  # ----------------------------------------------------------------------------------------------
+  # "Profit Delta" entity for battery energy produced (energy taken out of the battery). This is a
+  # "proxy" sensor that assumes that any energy exported not sent to the grid, has been 
+  # used for "self-consumption". This means that it does not care about how the energy is used,
+  # unless it is exported.
+  # ----------------------------------------------------------------------------------------------
+  - trigger:
+    - platform: state
+      entity_id: sensor.tsp_time_pattern_trigger_10_min
+      # Exclude any "non-number" state
+      not_from:
+        - "unknown"
+        - "unavailable"
+      not_to:
+        - "unknown"
+        - "unavailable"
+      variables:
+        # The resulting sensor entity_id (update if needed)
+        _entity_this: "sensor.tsp_battery_profit_delta"
+        # "Battery Energy Used", current and Last so that a delta can be calculated.
+        # In case "last" is not a number (does currently not exists), default it to "0".
+        # The entity state should be "cumulative energy" with the unit "kWh".
+        _entity_battery_energy_used: "sensor.ts_total_battery_energy_consumed" # UPDATE TO YOUR ENTITY
+        total_battery_energy_used: "{{ states(_entity_battery_energy_used) }}" 
+        last_total_battery_energy_used: >
+          {% set attr = state_attr(_entity_this, 'last_total_battery_energy_used') %}
+          {% if attr == None %}
+            {{ total_battery_energy_used }}
+          {% else %}
+            {{ attr }}
+          {% endif %}
+        # Price of imported energy (value of self-consumption) and profit of export
+        # (energy sent to grid)
+        current_import_cost: "{{ states('sensor.ts_current_energy_import_price') }}"
+        current_export_profit: "{{ states('sensor.ts_current_energy_export_profit') }}" 
+        # "Grid Energy Export", current and Last so that a delta can be calculated.
+        # In case "last" is not a number (does currently not exists), default it to "0"
+        total_grid_energy_export: "{{ states('sensor.tsp_cumulative_grid_energy_export') }}"
+        last_total_grid_energy_export: >
+          {% set attr = state_attr(_entity_this, 'last_total_grid_energy_export') %}
+          {% if attr == None %}
+            {{ total_grid_energy_export }}
+          {% else %}
+            {{ attr }}
+          {% endif %}
+        # Calculate usage deltas
+        export_delta: >
+          {% if is_number(total_grid_energy_export) %}
+          {{ float(total_grid_energy_export, 0.0) - float(last_total_grid_energy_export, 0.0) }}
+          {% else %}
+          {{ 0 }}
+          {% endif %}
+        battery_delta: >
+          {% if is_number(total_battery_energy_used) %}
+          {{ float(total_battery_energy_used, 0.0) - float(last_total_battery_energy_used, 0.0) }}
+          {% else %}
+          {{ 0 }}
+          {% endif %}
+    # Do not proceed to update the sensor unless the entities required actually has a meaningful state.
+    # The float default values above is simply to avoid exceptions and errors in the HA logs.  
+    condition:
+      - condition: template
+        value_template: "{{ is_number(total_battery_energy_used) and is_number(total_grid_energy_export) and is_number(current_export_profit) and is_number(current_import_cost) }}"
+    sensor:
+      - name: "TSP: Battery Profit Delta"
+        unique_id: ts_proxy_battery_profit_delta
+        unit_of_measurement: 'SEK'
+        # State = "Self-Consumed" (SC) * "Import Cost" (A) + "Sold to grid" (SG) * "Export Profit" (B) <=> SC * A + SG * B
+        # Where:
+        # SC = "Battery Used Delta" (BD) - SG <=> BD - SG
+        # and
+        # SG = min(BD, "Export Delta" (ED))
+        # This gives us that State = BD * A + SG * (B - A) <=> BD * A + (min(BD, ED) * (B - A))
+        state: "{{ (float(battery_delta, 0.0) * float(current_import_cost, 0.0)) + (min(float(battery_delta), float(export_delta)) * (float(current_export_profit, 0.0) - float(current_import_cost, 0.0))) }}"
+        attributes:
+          # Used to store internal states
+          last_total_battery_energy_used: "{{ total_battery_energy_used }}"
+          last_total_grid_energy_export: "{{ total_grid_energy_export }}"
+          # Seperated profit/savings attibutes
+          exported_profit_delta: "{{ (min(float(battery_delta, 0.0), float(export_delta, 0.0)) * float(current_export_profit, 0.0)) }}"
+          self_consumed_profit_delta: "{{ ((float(battery_delta, 0.0) - float(min(float(battery_delta, 0.0), float(export_delta, 0.0)), 0.0)) * float(current_import_cost, 0.0)) }}"
+          # Debug attributes
+          dbg_import_cost: "{{ current_import_cost }}"
+          dbg_export_cost: "{{ current_export_profit }}"
+          dbg_export_delta: "{{ export_delta }}"
+          dbg_battery_used_delta: "{{ battery_delta }}"
+          dbg_last_total_battery_energy_used: "{{ last_total_grid_energy_export }}"
+          dbg_last_total_grid_export: "{{ last_total_grid_energy_export }}"
+
+  # ----------------------------------------------------------------------------------------------
+  # Proxy entities mirroring the attribute of the "Battery Profit Delta" proxy entity above.
+  # This is done to allow these to be used with utility meters, as they do not support attributes
+  # directly
+  # ----------------------------------------------------------------------------------------------
+  # Split attributes from sensor above into their own sensors. 
+  # This as utility meters do not support attributes
+  - trigger:
+    - platform: state
+      entity_id: sensor.tsp_battery_profit_delta
+    condition:
+      - condition: template
+        value_template: "{{ is_number(trigger.to_state.state) }}"
+    sensor:
+      - name: "TSP: Battery Self-Consumed Profit Delta"
+        unique_id: ts_proxy_battery_self_consumed_profit_delta
+        unit_of_measurement: 'SEK'
+        state: "{{ float(trigger.to_state.attributes['self_consumed_profit_delta'], 0.0) }}"
+      - name: "TSP: Battery Exported Profit Delta"
+        unique_id: ts_proxy_battery_exported_profit_delta
+        unit_of_measurement: 'SEK'
+        state: "{{ float(trigger.to_state.attributes['exported_profit_delta'], 0.0) }}"
+  # ==============================================================================================
